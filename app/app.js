@@ -46,17 +46,6 @@ if ('development' === app.get('env')) {
     app.use(express.errorHandler());
 }
 
-var pg = require('pg')
-
-console.log("DATABASE URL ", process.env.DATABASE_URL)
-pg.connect(process.env.DATABASE_URL, function(err, client) {
-  console.log("ERROR", err);
-  var query = client.query('SELECT * FROM test_table');
-  query.on('row', function(row) {
-    console.log(JSON.stringify(row));
-  });
-});
-
 
 http.createServer(app).listen(app.get('port'), function () {
     console.log('Express server listening on port ' + app.get('port'));
