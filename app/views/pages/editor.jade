@@ -1,0 +1,68 @@
+extends ../layout
+block body
+  #blockly
+    xml(id="toolbox",style="display: none").
+      <category name="Shapes">
+        <block type="rectangle"></block>
+      </category>
+      <category name="Properties">
+      </category>
+      <category name="Inputs">
+        <block type="digital_input"></block>
+        <block type="analog_input"></block>
+      </category>
+      <category name="Control">
+        <block type="controls_if"></block>
+        <block type="controls_whileUntil"></block>
+      </category>
+      <category name="Logic">
+        <block type="logic_compare"></block>
+        <block type="logic_operation"></block>
+        <block type="logic_boolean"></block>
+      </category>
+      <category name="Core">
+        <block type="controls_if"></block>
+        <block type="controls_repeat_ext"></block>
+        <block type="logic_compare"></block>
+        <block type="sin"></block>
+        <block type="math_number"></block>
+        <block type="math_arithmetic"></block>
+        <block type="text"></block>
+        <block type="text_print"></block>
+      </category>
+      <category name="Variables" custom="VARIABLE"></category>
+      <category name="Functions" custom="PROCEDURE"></category>
+  #fabric-container
+    canvas#fabric
+
+block style
+  style.
+    #main {
+      padding: 0px;
+    }
+    #blockly {
+      position: absolute;
+      width: 50%;
+      height: 100%;
+      margin: 0px;
+      padding: 0px;
+    }
+    #fabric-container {
+      position: absolute;
+      width: 50%;
+      height: 100%;
+      left: 50%;
+    }
+
+block script
+  script(src="/blockly/blockly_compressed.js")
+  script(src="/blockly/javascript_compressed.js")
+  script(src="/blockly/blocks_compressed.js")
+  script(src="/blockly/en.js")
+
+  script(src="/js/fabric.min.js")
+  script(src='/js/socket.io-1.2.0.js')
+
+  script(src="/js/blockly-fabric.js")
+
+    
