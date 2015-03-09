@@ -7,10 +7,11 @@ $(function() {
   initializeBlockly();
   var socket = io();
 
+  var width = $("#fabric-container").width();
+  var height = $("#fabric-container").height();
   var canvas = this.__canvas = new fabric.Canvas('fabric');
-
-  canvas.setWidth($("#fabric-container").width());
-  canvas.setHeight($("#fabric-container").height());
+  canvas.setWidth(width);
+  canvas.setHeight(height);
 
   fabric.Object.prototype.transparentCorners = false;
 
@@ -24,49 +25,83 @@ $(function() {
     try {
       eval(canvas_code);
     } catch (e) {
+      console.log(canvas_code);
       console.log(e);
     }
-  }, 50);
+  }, 25);
 
   socket.on("pin_state", function(pin_state) {
     console.log("pin_state", pin_state);
   });
 
+  function applyShapeNaturals(shape) {
+    props = {}
+    _.each(["left", "top", "scaleX", "scaleY", "angle"], function(prop) {
+      props[prop] = shape["natural_"+prop];
+    });
+    shape.set(props);
+  }
+
   function updateShapeNaturals(shape) {
     props = {}
-    _.each(["left", "top", "width", "height", "angle"], function(prop) {
+    _.each(["left", "top", "scaleX", "scaleY", "angle"], function(prop) {
       props["natural_"+prop] = shape[prop];
     });
     shape.set(props);
   }
 
-  function ensureShape(id, prop_dict) {
+  function ensureShape(id, type) {
     if (shapes[id] == undefined) {
-      var rect = new fabric.Rect({
-        left: 100,
-        top: 50,
-        width: 100,
-        height: 100,
-        angle: 20,
+      var shape;
+      switch (type) {
+        case 'rect':
+          shape = new fabric.Rect({
+            left: 0,
+            top: 0,
+            scaleX: 50,
+            scaleY: 50,
+            width: 2,
+            height: 2,
+            originX: 'center',
+            originY: 'center',
+            centeredScaling: true
+          });
+          break;
+        case 'ellipse':
+          shape = new fabric.Circle({
+            left: 0,
+            top: 0,
+            radius: 1,
+            scaleX: 50,
+            scaleY: 50,
+            originX: 'center',
+            originY: 'center',
+            centeredScaling: true
+          });
+          break;
+      }
+      updateShapeNaturals(shape);
 
-        fill: 'green',
-        padding: 10,
-        originX: "center",
-        originY: "center",
-      });
-      updateShapeNaturals(rect);
-
-      rect.on("moving", function() {
+      shape.on("moving", function() {
         updateShapeNaturals(this);
       });
-      shapes[id] = rect;
-      canvas.add(rect);
+      shape.on("rotating", function() {
+        updateShapeNaturals(this);
+      });
+      shape.on("scaling", function() {
+        updateShapeNaturals(this);
+      });
+      shapes[id] = shape;
+      canvas.add(shape);
+      canvas.renderAll();
     }
   }
 
-  var cur_shape_id = -1;
+  cur_shape_id = -1;
   function beginShape(id) {
     cur_shape_id = id;
+    var shape = shapes[cur_shape_id];
+    applyShapeNaturals(shape);
   }
 
   function endShape() {
@@ -98,17 +133,34 @@ $(function() {
         case 'dth':
           shape.set({ angle: shape.get("natural_angle") + value });
           break;
+
+        case 'scale':
+          shape.set({
+            scaleX: value * canvas_width,
+            scaleY: value * canvas_height
+          });
+          break;
+        case 'dscale':
+          shape.set({
+            scaleX: shape.get("natural_scaleX") + value * canvas_width,
+            scaleY: shape.get("natural_scaleY") + value * canvas_height
+          });
+          break;
+
         case 'scale_x':
-          shape.set({ width: value * canvas_width });
+          shape.set({ scaleX: value * canvas_width });
           break;
         case 'dscale_x':
-          shape.set({ width: shape.get("natural_width") + value * canvas_width });
+          shape.set({ scaleX: shape.get("natural_scaleX") + value * canvas_width });
           break;
         case 'scale_y':
-          shape.set({ height: value * canvas_height });
+          shape.set({ scaleY: value * canvas_height });
           break;
         case 'dscale_y':
-          shape.set({ height: shape.get("natural_height") + value * canvas_height });
+          shape.set({ scaleY: shape.get("natural_scaleY") + value * canvas_height });
+          break;
+        case 'color':
+          shape.set({ fill: value });
           break;
       }
       shape.set({selectable: true});
@@ -135,6 +187,7 @@ $(function() {
     }
 
     canvas_code = code;
+    console.log(canvas_code);
   }
 
   function getDigitalValue(pin, off_value, on_value, transition_time) {
@@ -146,29 +199,63 @@ $(function() {
   }
 
   function initializeBlockly() {
-    Blockly.Blocks['rectangle'] = {
+    Blockly.Blocks['group'] = {
       init: function() {
         this.setColour(160);
         this.appendDummyInput()
-            .appendField("rectangle");
+            .appendField("group");
         this.appendStatementInput("properties")
+            .appendField("properties")
             .setCheck("value_setter");
-        this.setTooltip('');
+        this.appendStatementInput("shapes")
+            .appendField("shapes")
+            .setCheck("shape");
+        this.setPreviousStatement(true, "shape");
+        this.setNextStatement(true, "shape");
       }
     };
 
-    Blockly.JavaScript['rectangle'] = function(block) {
-      var prop_setters = Blockly.JavaScript.statementToCode(block, 'properties');
-      
-      var code = "\
-        ensureShape({{block_id}});\
-        beginShape({{block_id}});\
-        {{prop_setters}}\
-        endShape();\
-      "
-      var code = S(code).template({block_id: block.id, prop_setters: prop_setters}).s;
-      return code;
-    };
+    var shape_types = ["rect", "ellipse"];
+    
+    _.each(shape_types, function(shape_type) {
+      Blockly.Blocks[shape_type] = {
+        init: function() {
+          this.setColour(160);
+          this.appendDummyInput()
+              .appendField(shape_type);
+          this.appendStatementInput("properties")
+              .appendField("properties")
+              .setCheck("value_setter");
+          var colour = new Blockly.FieldColour('#ff0000');
+          this.appendValueInput("colour")
+            .appendField("color")
+            .appendField(colour, 'colour_manual')
+            .setCheck("Colour");
+        }
+      };
+
+      Blockly.JavaScript[shape_type] = function(block) {
+        var prop_setters = Blockly.JavaScript.statementToCode(block, 'properties');
+        var colour_manual = block.getFieldValue('colour_manual');
+        var colour_driven = Blockly.JavaScript.valueToCode(block, 'colour', Blockly.JavaScript.ORDER_ADDITION) || null;
+
+        if (colour_driven != null) 
+          prop_setters += "driveProperty('color', "+colour_driven+");";
+        else
+          prop_setters += "driveProperty('color', '"+colour_manual+"');";
+        
+        var code = "\
+          ensureShape({{block_id}}, '{{shape_type}}');\
+          beginShape({{block_id}});\
+          {{prop_setters}}\
+          endShape();\
+        "
+        var code = S(code).template({block_id: block.id, prop_setters: prop_setters, shape_type: shape_type}).s;
+        return code;
+      };
+    });
+
+
 
     Blockly.Blocks['sin'] = {
       init: function() {
@@ -302,29 +389,27 @@ $(function() {
       return [code, Blockly.JavaScript.ORDER_ADDITION];
     };
 
-    var props = ["x", "y", "dx", "dy", "th", "dth", "scale_x", "scale_y", "dscale_y", "dscale_y"];
-    _.each(props, function(prop) {
-      Blockly.Blocks['set_'+prop] = {
-        init: function() {
-          this.setColour(20);
-          this.appendDummyInput()
-            .appendField("set " + prop);
-          this.appendValueInput("value");
-          this.setPreviousStatement(true, "value_setter");
-          this.setNextStatement(true, "value_setter");
-        }
-      };
-      Blockly.JavaScript['set_'+prop] = function(block) {
-        var code = "driveProperty('{{prop}}', {{value}});";
-        code = S(code).template({
-          prop: prop,
-          value: Blockly.JavaScript.valueToCode(block, 'value', Blockly.JavaScript.ORDER_ADDITION) || null
-        }).s;
-        return code;
-      };
-      $("category[name='Properties']").append($("<block type='set_"+prop+"'></block>"));
-    });
-
+    var props = ["none", "x", "y", "dx", "dy", "th", "dth", "scale", "d_scale", "scale_x", "scale_y", "dscale_y", "dscale_y"];
+    Blockly.Blocks['set_property'] = {
+      init: function() {
+        this.setColour(20);
+        this.appendDummyInput()
+            .appendField("property")
+            .appendField(new Blockly.FieldDropdown(_.map(props, function(i) {return [i.toString(),i.toString()]})), "property");
+        this.appendValueInput("value");
+        this.setPreviousStatement(true, "value_setter");
+        this.setNextStatement(true, "value_setter");
+      }
+    };
+    Blockly.JavaScript['set_property'] = function(block) {
+      var prop = block.getFieldValue('property');
+      var code = "driveProperty('{{prop}}', {{value}});";
+      code = S(code).template({
+        prop: prop,
+        value: Blockly.JavaScript.valueToCode(block, 'value', Blockly.JavaScript.ORDER_ADDITION) || null
+      }).s;
+      return code;
+    };
 
     Blockly.inject(
       document.getElementById('blockly'), {
@@ -333,8 +418,15 @@ $(function() {
     );
 
     Blockly.addChangeListener(updateBlockly);
+    Blockly.bindEvent_(window, "blocklySelectChange", this, function() {
+      if (Blockly.selected) {
+        if (shapes[Blockly.selected.id])
+          canvas.setActiveObject(shapes[Blockly.selected.id]);
+      } else {
+        canvas.deactivateAll().renderAll();
+      }
+    });
   };
 });
-
 
 
