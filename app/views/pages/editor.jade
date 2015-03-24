@@ -1,20 +1,31 @@
 extends ../layout
+block navbar
+  li
+    a#upload-button Upload Image
+  li
+    a#save-button Save
+  li
+    a.dropdown-toggle(href='#', data-toggle='dropdown', role='button', aria-expanded='false')
+      | Load 
+      span.caret
+    ul#load-workspaces.dropdown-menu(role='menu')
+
 block body
   #blockly
     xml(id="toolbox",style="display: none").
       <category name="Shapes">
         <block type="rect"></block>
         <block type="ellipse"></block>
+        <block type="image"></block>
+        <block type="set_property"></block>
       </category>
       </category>
       <category name="Inputs">
         <block type="digital_input"></block>
         <block type="analog_input"></block>
-        <block type="set_property"></block>
-      </category>
-      <category name="Control">
-        <block type="controls_if"></block>
-        <block type="controls_whileUntil"></block>
+        <block type="sin"></block>
+        <block type="math_number"></block>
+        <block type="math_arithmetic"></block>
       </category>
       <category name="Color">
         <block type="colour_picker"></block>
@@ -54,25 +65,43 @@ block body
           </value>
         </block>
       </category>
-      <category name="Logic">
-        <block type="logic_compare"></block>
-        <block type="logic_operation"></block>
-        <block type="logic_boolean"></block>
-      </category>
-      <category name="Core">
-        <block type="controls_if"></block>
-        <block type="controls_repeat_ext"></block>
-        <block type="logic_compare"></block>
-        <block type="sin"></block>
-        <block type="math_number"></block>
-        <block type="math_arithmetic"></block>
-        <block type="text"></block>
-        <block type="text_print"></block>
-      </category>
-      <category name="Variables" custom="VARIABLE"></category>
-      <category name="Functions" custom="PROCEDURE"></category>
   #fabric-container
     canvas#fabric
+
+  #save-modal.modal.fade
+    .modal-dialog
+      .modal-content
+        .modal-header
+          button.close(type='button', data-dismiss='modal', aria-label='Close')
+            span(aria-hidden='true') &times;
+          h4.modal-title Save workspace
+        .modal-body
+          form
+            .form-group
+              label.control-label(for='workspace-name') Name:
+              input#workspace-name.form-control(type='text')
+        .modal-footer
+          button.btn.btn-default(type='button', data-dismiss='modal') Close
+          button#save-button2.btn.btn-primary(type='button') Save workspace
+
+  form#upload-modal.modal.form(method="post", action="/images", enctype="multipart/form-data")
+    .modal-dialog
+      .modal-content
+        .modal-header
+          button.close(type='button', data-dismiss='modal', aria-label='Close')
+            span(aria-hidden='true') &times;
+          h4.modal-title Upload image
+        .modal-body
+          .form-group
+            label.control-label(for='image-name') Name:
+            input#image-name.form-control(type='text')
+          .form-group
+            label(for='image-file') File input
+            input#image-file(type='file',name='file')
+            p.help-block Upload your image
+        .modal-footer
+          button.btn.btn-default(type='button', data-dismiss='modal') Close
+          button#upload-button2.btn.btn-primary() Upload
 
 block style
   style.
