@@ -386,8 +386,8 @@ $(function() {
               .appendField("image")
               .appendField(new Blockly.FieldDropdown(function() {
                 var ddl = [["none", "NONE"]];
-                _.each(images, function(im) {
-                  ddl.push([im.name, im.path]);
+                _.each(images, function(arr) {
+                  ddl.push(arr);
                 });
                 console.log("returning", ddl);
                 return ddl;
@@ -635,7 +635,10 @@ $(function() {
 
   function fetchImages() {
     $.get("/images", function(data) {
-      images = data;
+      images = []
+      _.each(data, function(path, name) {
+        images.push([name, path]);
+      });
       console.log("fetched images", images);
     });
   }
@@ -694,9 +697,8 @@ $(function() {
     $.get("/workspaces", function(data) {
       console.log(data);
       $("#load-workspaces").empty();
-      _.each(data, function(d) {
-        console.log(d);
-        var el = $("<li><a href='#'>"+d.name+"</a></li>");
+      _.each(data, function(value, key) {
+        var el = $("<li><a href='#'>"+key+"</a></li>");
         el.find("a").click( function() {
           var name = this.innerText;
           window.location = window.location.href.split("?")[0] + "?workspace=" + name;

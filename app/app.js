@@ -12,7 +12,6 @@ var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var async = require("async");
 var multer = require('multer');
-var glob = require("glob");
 var path = require("path");
 
 var mraa;
@@ -23,8 +22,6 @@ try {
 }
 
 var fs = require("fs");
-var levelup = require("levelup");
-var db = levelup("./labserve.db");
 
 var appConfig = require('./config/appConfig.json');
 var pin_map = {};
@@ -68,57 +65,63 @@ app.post('/workspaces', function(req, res) {
   var name = req.body.name;
   var workspace = req.body.workspace;
   console.log("saving", name, workspace);
-  db.put("workspace:" + name, JSON.stringify(workspace));
+
+  var workspace_db;
+  try {
+    workspace_db = JSON.parse(fs.readFileSync("workspace_db.json"))
+  } catch (ex) {
+    workspace_db = {};
+
+  }
+  workspace_db[name] = JSON.stringify(workspace);
+  fs.writeFileSync("workspace_db.json", JSON.stringify(workspace_db));
 
   res.json({});
 });
 
 app.get('/workspaces', function(req, res) {
-  var rs = db.createReadStream();
-  var l = []
-  rs.on('data' , function (data) {
-    if (data.key.indexOf("workspace:") == 0)
-      l.push({"name": data.key.substr(10)});
-  });
-  rs.on('error', function (err) { /* handle err */ });
-  rs.on('close', function () { 
-    res.json(l);
-  });
+  var workspace_db;
+  try {
+    workspace_db = JSON.parse(fs.readFileSync("workspace_db.json"));
+  } catch (ex) {
+    workspace_db = {};
+  }
+  res.json(workspace_db);
+
 });
 
 app.get('/workspaces/:name', function(req, res) {
-  db.get("workspace:"+req.params.name, function (err, value) {
-    if (err) {
-      console.log(err);
-      res.status(404).send('Not found');
-    } else {
-      res.set('Content-Type', 'text/xml');
-      res.send(value);
-    }
-  });
+  var workspace_db;
+  try {
+    workspace_db = JSON.parse(fs.readFileSync("workspace_db.json"));
+  } catch (ex) { 
+    workspace_db = {}
+  }
+  res.send(workspace_db[req.params.name]);
 });
 
 app.get('/images', function(req, res) {
-  var rs = db.createReadStream();
-  var l = []
-  rs.on('data' , function (data) {
-    if (data.key.indexOf("image:") == 0)
-      l.push({name: data.key.substr(6), path: data.value});
-  });
-  rs.on('error', function (err) { /* handle err */ });
-  rs.on('close', function () { 
-    res.json(l);
-  });
+  var image_db;
+  try {
+    image_db = JSON.parse(fs.readFileSync("image_db.json"));
+  } catch (ex) {
+    image_db = {};
+  }
+  res.json(image_db);
 });
 
 app.post('/images', function(req, res) {
-  if (req.files["file"]) {
-    var path = "/" + req.files["file"].path;
-    var name = req.files["file"].name;
-    name = name.replace(/\.[^/.]+$/, "");
-    console.log("saving", name, path);
-    db.put("image:" + name, path);
+  var image_db;
+  try {
+    image_db = JSON.parse(fs.readFileSync("image_db.json"));
+  } catch (ex) {
+    image_db = {};
   }
+  var path = "/" + req.files["file"].path;
+  var name = req.files["file"].name;
+  name = name.replace(/\.[^/.]+$/, "");
+  image_db[name] = path;
+  fs.writeFileSync("image_db.json", JSON.stringify(image_db));
   res.json({});
 });
 

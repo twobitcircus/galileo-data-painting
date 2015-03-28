@@ -1,0 +1,5 @@
+DEVICE=galileo
+SOURCE_DIR=../
+DEST_DIR=pr3
+URL_PATH=/pages/editor
+HTTP_PORT=8080

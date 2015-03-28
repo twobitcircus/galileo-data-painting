@@ -1,6 +1,24 @@
+3.1.1 / 2015-03-26
+------------------
+- hack to work around the improper behavior (modifying of string prototype) of [shelljs](https://github.com/arturadib/shelljs)
+see: [127](https://github.com/jprichardson/string.js/issues/127), [128](https://github.com/jprichardson/string.js/pull/128)
+
+3.1.0 / 2015-03-21
+------------------
+- added `stripLeft([chars])` and `stripRight([chars])` [#133](https://github.com/jprichardson/string.js/pull/133)
+
+
+3.0.1 / 2015-03-16
+------------------
+* bugfix `underscore()` for single letter "words" [#131](https://github.com/jprichardson/string.js/pull/131)
+
+```js
+S('oneAtATime').underscore().s //'one_at_a_time' instead of 'one_at_atime'
+```
+
 3.0.0 / 2014-12-08
 ------------------
-**BREAKING** Now `underscore()` behaves as one would expect. 
+**BREAKING** Now `underscore()` behaves as one would expect.
 
 ```js
 S('CarSpeed').underscore().s //'_car_speed'
@@ -43,7 +61,7 @@ See [#122](https://github.com/jprichardson/string.js/pull/122) [#98](https://git
 
 1.9.0 / 2014-06-23
 ------------------
-* added `wrapHTML()` method, (#90) 
+* added `wrapHTML()` method, (#90)
 
 1.8.1 / 2014-04-23
 ------------------
@@ -83,7 +101,7 @@ See [#122](https://github.com/jprichardson/string.js/pull/122) [#98](https://git
 * The configurable option "Escape character" is documented as "escape" but was implemented as "escapeChar" (Reggino #44)
 * removed `lines()`, better to not have it, then to do it incorrectly (#40)
 * added `humanize()` method, (#34)
-* added `count()` method, (#41) 
+* added `count()` method, (#41)
 
 1.3.1 / 2013-04-03
 ------------------
@@ -110,7 +128,7 @@ See [#122](https://github.com/jprichardson/string.js/pull/122) [#98](https://git
 * Fixed replaceAll bug. #21
 * Changed `slugify` behavior. #17
 * Renamed `decodeHtmlEntities` to `decodeHTMLEntities` for consistency. `decodeHtmlEntities` is deprecated. #23
- 
+
 
 1.1.0 / 2012-10-08
 ------------------
@@ -132,7 +150,7 @@ See [#122](https://github.com/jprichardson/string.js/pull/122) [#98](https://git
 * Constructor will now cast the parameter to a string via its `toString()` method.
 * Added `VERSION` value. Useful for browser dependency checking.
 * Added `lines()` method.
-* Added `slugify()` method. 
+* Added `slugify()` method.
 * Added `escapeHTML()` and `unescapeHTML()` methods.
 * Added `truncate()` method.
 * Added `stripTags()` method.
