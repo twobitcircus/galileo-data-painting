@@ -1,0 +1,3 @@
+[submodule "genstaller"]
+	path = genstaller
+	url = git@github.com:twobitcircus/genstaller.git
